@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>Tampa Surveillance</title>
+
+    <link rel="stylesheet" href="assets/bootstrap-3.1.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="assets/font-awesome-4.1.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="assets/fancybox-2.5.1/jquery.fancybox.css">
+    <link rel="stylesheet" href="assets/leaflet-0.7.2/leaflet.css">
+    <link rel="stylesheet" href="assets/leaflet-sidebar-0.1.5/L.Control.Sidebar.css">
+    <link rel="stylesheet" href="assets/leaflet-markercluster-0.4.0/MarkerCluster.css">
+    <link rel="stylesheet" href="assets/leaflet-markercluster-0.4.0/MarkerCluster.Default.css">
+    <!--[if lte IE 8]><link rel="stylesheet" href="assets/leaflet-markercluster-0.4.0/MarkerCluster.Default.ie.css"><![endif]-->
+    <link rel="stylesheet" href="assets/leaflet-locatecontrol-0.27.0/L.Control.Locate.css">
+    <!--[if lte IE 9]><link rel="stylesheet" href="assets/leaflet-locatecontrol-0.27.0/L.Control.Locate.ie.css"><![endif]-->
+    <link rel="stylesheet" href="assets/css/app.css">
+
+    <link rel="apple-touch-icon" href="assets/img/favicon-152.png">
+    <link rel="shortcut icon" sizes="196x196" href="assets/img/favicon-196.png">
+
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+        <script src="assets/js/html5shiv.js"></script>
+        <script src="assets/js/respond.min.js"></script>
+    <![endif]-->
+  </head>
+
+  <body>
+    <div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="#">Tampa Surveillance Cameras</a>
+      </div>
+      <div class="navbar-collapse collapse navbar-right">
+        <ul class="nav navbar-nav">
+          <li><a href="#" data-toggle="collapse" data-target=".navbar-collapse.in" onclick="$('#aboutModal').modal('show'); return false;"><i class="fa fa-question-circle" style="color: white"></i>&nbsp;&nbsp;About</a></li>
+          <li><a href="#" data-toggle="collapse" data-target=".navbar-collapse.in" onclick="map.fitBounds(markerClusters.getBounds()); return false;"><i class="fa fa-arrows-alt" style="color: white"></i>&nbsp;&nbsp;Extent</a></li>
+          <li class="dropdown">
+              <a class="dropdown-toggle" id="downloadDrop" href="#" role="button" data-toggle="dropdown"><i class="fa fa-cloud-download" style="color: white"></i>&nbsp;&nbsp;Download <b class="caret"></b></a>
+              <ul class="dropdown-menu">
+                <li><a href="https://web.fulcrumapp.com/shares/b711f907a8d42665.geojson" download="tampa-surveillance-cameras.geojson" target="_blank" data-toggle="collapse" data-target=".navbar-collapse.in"><i class="fa fa-download"></i>&nbsp;&nbsp;GeoJSON</a></li>
+                <li><a href="https://web.fulcrumapp.com/shares/b711f907a8d42665.csv" download="tampa-surveillance-cameras.csv" target="_blank" data-toggle="collapse" data-target=".navbar-collapse.in"><i class="fa fa-download"></i>&nbsp;&nbsp;CSV</a></li>
+                <li><a href="https://web.fulcrumapp.com/shares/b711f907a8d42665.kml" download="tampa-surveillance-cameras.kml" target="_blank" data-toggle="collapse" data-target=".navbar-collapse.in"><i class="fa fa-download"></i>&nbsp;&nbsp;KML</a></li>
+              </ul>
+          </li>
+          <li><a href="#" data-toggle="collapse" data-target=".navbar-collapse.in" onclick="sidebar.toggle(); return false;"><i class="fa fa-search" style="color: white"></i>&nbsp;&nbsp;Camera Search</a></li>
+        </ul>
+      </div><!--/.navbar-collapse -->
+    </div>
+    <div id="map"></div>
+    <div id="sidebar">
+      <div class="panel panel-default" style="margin: 0px;" id="cameras">
+        <!-- Default panel contents -->
+        <div class="panel-heading">
+          <h3 class="panel-title">Camera Search</h3>
+        </div>
+        <div class="panel-body">
+          <p>
+            <div class="row">
+              <div class="col-xs-8 col-md-8">
+                <input type="text" class="form-control search" placeholder="Search" />
+              </div>
+              <div class="col-xs-4 col-md-4">
+                <button type="button" class="btn btn-primary pull-right sort" data-sort="camera-name"><i class="fa fa-sort"></i>&nbsp;&nbsp;Sort</button>
+              </div>
+            </div>
+          </p>
+        </div>
+        <table class="table table-condensed table-striped" id="camera-list">
+          <thead class="hidden">
+            <tr>
+              <th>Name</th>
+              <th>Location</th>
+            <tr>
+          </thead>
+          <tbody class="list"></tbody>
+        </table>
+      </div>
+    </div>
+    <div id="loading">
+      <div class="loading-indicator">
+        <div class="progress progress-striped active">
+          <div class="progress-bar progress-bar-info" style="width: 100%"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="aboutModal" tabindex="-1" role="dialog">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button class="close" type="button" data-dismiss="modal" aria-hidden="true">&times;</button>
+            <h4 class="modal-title">Welcome!</h4>
+          </div>
+          <div class="modal-body">
+            <strong>Tampa Surveillance Cameras</strong> is an open source application for accessing information on the City of Tampa’s <a href="http://www.baynews9.com/content/news/baynews9/news/article.html/content/news/articles/bn9/2012/8/15/app_shows_location_o.html">surveillance cameras</a>, which were surveyed using the <a href="http://fulcrumapp.com/">Fulcrum App</a>, developed by <a href="http://spatialnetworks.com/">Spatial Networks</a>.
+          </div>
+        </div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+
+    <div class="modal fade" id="legendModal" tabindex="-1" role="dialog">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+            <h4 class="modal-title">Map Legend</h4>
+          </div>
+          <div class="modal-body">
+            <p>Map Legend goes here...</p>
+          </div>
+        </div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+
+    <div class="modal fade" id="loginModal" tabindex="-1" role="dialog">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+            <h4 class="modal-title">Login</h4>
+          </div>
+          <div class="modal-body">
+            <form id="contact-form">
+              <fieldset>
+                <div class="form-group">
+                  <label for="name">Username:</label>
+                  <input type="text" class="form-control" id="username">
+                </div>
+                <div class="form-group">
+                  <label for="email">Password:</label>
+                  <input type="password" class="form-control" id="password">
+                </div>
+              </fieldset>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-primary pull-right" data-dismiss="modal">Login</button>
+          </div>
+        </div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+
+    <div class="modal fade" id="featureModal" tabindex="-1" role="dialog">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button class="close" type="button" data-dismiss="modal" aria-hidden="true">&times;</button>
+            <h4 class="modal-title" id="feature-title"></h4>
+          </div>
+          <div class="modal-body" id="feature-info">
+            <div class="panel panel-primary">
+              <div class="panel-heading">
+                <h3 class="panel-title">Location</h3>
+              </div>
+              <table id="location-table" class='table table-striped table-bordered table-condensed'></table>
+            </div>
+            <div class="panel panel-primary">
+              <div class="panel-heading">
+                <h3 class="panel-title">Camera</h3>
+              </div>
+              <table id="camera-table" class='table table-striped table-bordered table-condensed'></table>
+            </div>
+            <div class="panel panel-primary">
+              <div class="panel-heading">
+                <h3 class="panel-title">Platform</h3>
+              </div>
+              <table id="platform-table" class='table table-striped table-bordered table-condensed'></table>
+            </div>
+          </div>
+        </div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+
+    <div class="modal fade" id="attributionModal" tabindex="-1" role="dialog">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button class="close" type="button" data-dismiss="modal" aria-hidden="true">&times;</button>
+            <h4 class="modal-title">
+              Developed by <a href='http://bryanmcbride.com'>bryanmcbride.com</a>
+            </h4>
+          </div>
+          <div class="modal-body">
+            <div id="attribution"></div>
+          </div>
+        </div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+
+    <script src="assets/js/jquery-1.11.0.min.js"></script>
+    <script src="assets/bootstrap-3.1.1/js/bootstrap.min.js"></script>
+    <script src="assets/fancybox-2.5.1/jquery.fancybox.pack.js"></script>
+    <script src="assets/list-1.1.1/list.min.js"></script>
+    <script src="assets/leaflet-0.7.2/leaflet.js"></script>
+    <script src="assets/leaflet-groupedlayercontrol/leaflet.groupedlayercontrol.js"></script>
+    <script src="assets/leaflet-activearea/L.activearea.js"></script>
+    <script src="assets/leaflet-sidebar-0.1.5/L.Control.Sidebar.js"></script>
+    <script src="assets/leaflet-markercluster-0.4.0/leaflet.markercluster.js"></script>
+    <script src="assets/leaflet-locatecontrol-0.27.0/L.Control.Locate.js"></script>
+    <script src="assets/js/app.js"></script>
+  </body>
+</html>
