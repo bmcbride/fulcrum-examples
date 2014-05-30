@@ -50,6 +50,8 @@ var mapboxSat = L.tileLayer("http://{s}.tiles.mapbox.com/v3/spatialnetworks.map-
 });
 
 /* Overlay Layers */
+var highlight = L.geoJson(null);
+
 /* Single marker cluster layer to hold all clusters */
 var markerClusters = new L.MarkerClusterGroup({
   spiderfyOnMaxZoom: true,
@@ -158,6 +160,12 @@ var cameras = L.geoJson(null, {
             });
             return false;
           })
+
+          highlight.clearLayers().addLayer(L.circle([feature.geometry.coordinates[1], feature.geometry.coordinates[0]], 10, {
+            stroke: false,
+            fillColor: "#00FFFF",
+            fillOpacity: 0.8
+          }))
         }
       });
       $("#camera-list tbody").append('<tr><td class="camera-name">'+layer.feature.properties.description+'</td><td class="camera-location"><a href="#" onclick="sidebarClick('+layer.feature.geometry.coordinates[1]+', '+layer.feature.geometry.coordinates[0]+', '+L.stamp(layer)+', cameras); return false;">'+feature.properties.latitude.toFixed(6) + ", " + feature.properties.longitude.toFixed(6)+'</a></td></tr>');
@@ -174,7 +182,7 @@ $.getJSON("https://web.fulcrumapp.com/shares/b711f907a8d42665.geojson", function
 map = L.map("map", {
   zoom: 15,
   center: [27.948572, -82.455803],
-  layers: [mapboxOSM, markerClusters, completeListener, incompleteListener],
+  layers: [mapboxOSM, markerClusters, completeListener, incompleteListener, highlight],
   zoomControl: false,
   attributionControl: false
 });
@@ -286,11 +294,6 @@ if (document.body.clientWidth <= 767) {
 var layerControl = L.control.groupedLayers(baseLayers, groupedOverlays, {
   collapsed: isCollapsed
 }).addTo(map);
-
-/* Highlight search box text on click */
-$("#searchbox").click(function () {
-  $(this).select();
-});
 
 $(document).one("ajaxStop", function () {
   map.fitBounds(markerClusters.getBounds());
