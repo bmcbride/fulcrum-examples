@@ -22,6 +22,11 @@ function getViewport() {
       height: $("#map").css("height")
     });
   }
+  if (document.body.clientWidth <= 767) {
+    $(".leaflet-sidebar .close").css("top", "8px");
+  } else {
+    $(".leaflet-sidebar .close").css("top", "15px");
+  }
 }
 
 function sidebarClick(lat, lng, id, layer) {
@@ -77,23 +82,23 @@ var cameras = L.geoJson(null, {
       if (feature.properties.status === "Complete") {
         layer.setIcon(
           L.icon({
-            iconUrl: "assets/img/cctv-green.png",
+            iconUrl: "assets/img/cctv-complete.png",
             iconSize: [24, 28],
             iconAnchor: [12, 28],
             popupAnchor: [0, -25]
           })
-        )
+        );
         completeLayer.addLayer(layer);
       }
       if (feature.properties.status === "Incomplete") {
         layer.setIcon(
           L.icon({
-            iconUrl: "assets/img/cctv-red.png",
+            iconUrl: "assets/img/cctv-incomplete.png",
             iconSize: [24, 28],
             iconAnchor: [12, 28],
             popupAnchor: [0, -25]
           })
-        )
+        );
         incompleteLayer.addLayer(layer);
       }
       function formatValues(value) {
@@ -159,16 +164,16 @@ var cameras = L.geoJson(null, {
               }
             });
             return false;
-          })
+          });
 
           highlight.clearLayers().addLayer(L.circle([feature.geometry.coordinates[1], feature.geometry.coordinates[0]], 10, {
             stroke: false,
             fillColor: "#00FFFF",
             fillOpacity: 0.8
-          }))
+          }));
         }
       });
-      $("#camera-list tbody").append('<tr><td class="camera-name">'+layer.feature.properties.description+'</td><td class="camera-location"><a href="#" onclick="sidebarClick('+layer.feature.geometry.coordinates[1]+', '+layer.feature.geometry.coordinates[0]+', '+L.stamp(layer)+', cameras); return false;">'+feature.properties.latitude.toFixed(6) + ", " + feature.properties.longitude.toFixed(6)+'</a></td></tr>');
+      $("#camera-list tbody").append('<tr style="cursor: pointer;" onclick="sidebarClick('+layer.feature.geometry.coordinates[1]+', '+layer.feature.geometry.coordinates[0]+', '+L.stamp(layer)+', cameras); return false;"><td class="camera-name">'+layer.feature.properties.description+'&nbsp;&nbsp;<i class="fa fa-chevron-right pull-right"></i><img class="pull-left" src="assets/img/cctv-'+layer.feature.properties.status.toLowerCase()+'.png" width="12" height="14" style="margin-right: 5px;"></td></tr>');
     }
   }
 });
@@ -204,6 +209,10 @@ map.on("overlayremove", function(e) {
   if (e.layer === incompleteListener) {
     markerClusters.removeLayer(incompleteLayer);
   }
+});
+
+map.on("click", function(e) {
+  highlight.clearLayers();
 });
 
 /* Attribution control */
@@ -269,8 +278,8 @@ var baseLayers = {
 
 var groupedOverlays = {
   "Surveillance Cameras": {
-    "<img src='assets/img/cctv-green.png' width='24' height='28'>&nbsp;Surveyed": completeListener,
-    "<img src='assets/img/cctv-red.png' width='24' height='28'>&nbsp;Not Surveyed": incompleteListener
+    "<img src='assets/img/cctv-complete.png' width='24' height='28'>&nbsp;Surveyed": completeListener,
+    "<img src='assets/img/cctv-incomplete.png' width='24' height='28'>&nbsp;Not Surveyed": incompleteListener
   }
 };
 
@@ -296,9 +305,9 @@ var layerControl = L.control.groupedLayers(baseLayers, groupedOverlays, {
 }).addTo(map);
 
 $(document).one("ajaxStop", function () {
-  map.fitBounds(markerClusters.getBounds());
   $("#loading").hide();
-  var cameraList = new List("cameras", {valueNames: ["camera-name", "camera-location"]}).sort("camera-name", {order:"asc"});
+  map.fitBounds(markerClusters.getBounds());
+  var cameraList = new List("cameras", {valueNames: ["camera-name"/*, "camera-location"*/]}).sort("camera-name", {order:"asc"});
 });
 
 /* Placeholder hack for IE */
