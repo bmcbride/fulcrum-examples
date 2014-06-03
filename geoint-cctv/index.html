@@ -45,7 +45,7 @@
       <div class="navbar-collapse collapse navbar-right">
         <ul class="nav navbar-nav">
           <li><a href="#" data-toggle="collapse" data-target=".navbar-collapse.in" onclick="$('#aboutModal').modal('show'); return false;"><i class="fa fa-question-circle" style="color: white"></i>&nbsp;&nbsp;About</a></li>
-          <li><a href="#" data-toggle="collapse" data-target=".navbar-collapse.in" onclick="map.fitBounds(markerClusters.getBounds()); return false;"><i class="fa fa-arrows-alt" style="color: white"></i>&nbsp;&nbsp;Extent</a></li>
+          <li><a href="#" data-toggle="collapse" data-target=".navbar-collapse.in" onclick="map.fitBounds(markerClusters.getBounds()); return false;"><i class="fa fa-arrows-alt" style="color: white"></i>&nbsp;&nbsp;Zoom All</a></li>
           <li class="dropdown">
               <a class="dropdown-toggle" id="downloadDrop" href="#" role="button" data-toggle="dropdown"><i class="fa fa-cloud-download" style="color: white"></i>&nbsp;&nbsp;Download <b class="caret"></b></a>
               <ul class="dropdown-menu">
@@ -60,32 +60,34 @@
     </div>
     <div id="map"></div>
     <div id="sidebar">
-      <div class="panel panel-default" style="margin: 0px;" id="cameras">
-        <!-- Default panel contents -->
-        <div class="panel-heading">
-          <h3 class="panel-title">Camera Search</h3>
-        </div>
-        <div class="panel-body">
-          <p>
-            <div class="row">
-              <div class="col-xs-8 col-md-8">
-                <input type="text" class="form-control search" placeholder="Search" />
+      <div class="sidebar-wrapper">
+        <div class="panel panel-default" style="margin: 0px; border: none; border-radius: 0px; -webkit-box-shadow: none; box-shadow: none;" id="cameras">
+          <div class="panel-heading">
+            <h3 class="panel-title">Camera Search</h3>
+          </div>
+          <div class="panel-body">
+            <p>
+              <div class="row">
+                <div class="col-xs-8 col-md-8">
+                  <input type="text" class="form-control search" placeholder="Search" />
+                </div>
+                <div class="col-xs-4 col-md-4">
+                  <button type="button" class="btn btn-primary pull-right sort" data-sort="camera-name"><i class="fa fa-sort"></i>&nbsp;&nbsp;Sort</button>
+                </div>
               </div>
-              <div class="col-xs-4 col-md-4">
-                <button type="button" class="btn btn-primary pull-right sort" data-sort="camera-name"><i class="fa fa-sort"></i>&nbsp;&nbsp;Sort</button>
-              </div>
-            </div>
-          </p>
+            </p>
+          </div>
+          <div class="sidebar-table">
+            <table class="table table-hover" id="camera-list">
+              <thead class="hidden">
+                <tr>
+                  <th>Name</th>
+                <tr>
+              </thead>
+              <tbody class="list"></tbody>
+            </table>
+          </div>
         </div>
-        <table class="table table-condensed table-striped" id="camera-list">
-          <thead class="hidden">
-            <tr>
-              <th>Name</th>
-              <th>Location</th>
-            <tr>
-          </thead>
-          <tbody class="list"></tbody>
-        </table>
       </div>
     </div>
     <div id="loading">

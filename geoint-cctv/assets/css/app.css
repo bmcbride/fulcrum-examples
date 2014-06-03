@@ -6,8 +6,8 @@ html, body, #map {
 body {
   padding-top: 50px;
 }
-.leaflet-sidebar > .leaflet-control {
-  padding: 0px;
+#sidebar {
+  overflow: hidden;
 }
 #loading {
   position: absolute;
@@ -18,6 +18,25 @@ body {
   margin: -10px 0 0 -110px;
   z-index: 20001;
 }
+.sidebar-wrapper {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+.sidebar-table {
+  position: absolute;
+  width: 100%;
+  top: 124px;
+  bottom: 0px;
+  overflow: auto;
+}
+.leaflet-sidebar > .leaflet-control {
+  padding: 0px;
+}
+.leaflet-sidebar .close {
+  font-size: 21px;
+}
 .leaflet-control-layers label {
   font-weight: normal;
   margin-bottom: 0px;
@@ -27,11 +46,9 @@ body {
   margin-bottom: .2em;
   display: block;
 }
-
 .leaflet-control-layers-group {
   margin-bottom: .5em;
 }
-
 .leaflet-control-layers-group label {
   padding-left: .5em;
 }
