@@ -29,17 +29,18 @@ function getViewport() {
   }
 }
 
-function sidebarClick(lat, lng, id, layer) {
+function sidebarClick(id) {
   /* If sidebar takes up entire screen, hide it and go to the map */
   if (document.body.clientWidth <= 767) {
     sidebar.hide();
     getViewport();
   }
-  map.setView([lat, lng], 18);
-  if (!map.hasLayer(layer)) {
-    map.addLayer(layer);
-  }
-  map._layers[id].fire("click");
+  map.addLayer(completeListener).addLayer(incompleteListener);
+  var layer = markerClusters.getLayer(id);
+  markerClusters.zoomToShowLayer(layer, function() {
+    map.setView([layer.getLatLng().lat, layer.getLatLng().lng], 18);
+    layer.fire("click");
+  })
 }
 
 /* Basemap Layers */
@@ -173,7 +174,7 @@ var cameras = L.geoJson(null, {
           }));
         }
       });
-      $("#camera-list tbody").append('<tr style="cursor: pointer;" onclick="sidebarClick('+layer.feature.geometry.coordinates[1]+', '+layer.feature.geometry.coordinates[0]+', '+L.stamp(layer)+', cameras); return false;"><td class="camera-name">'+layer.feature.properties.description+'&nbsp;&nbsp;<i class="fa fa-chevron-right pull-right"></i><img class="pull-left" src="assets/img/cctv-'+layer.feature.properties.status.toLowerCase()+'.png" width="12" height="14" style="margin-right: 5px;"></td></tr>');
+      $("#camera-list tbody").append('<tr style="cursor: pointer;" onclick="sidebarClick('+L.stamp(layer)+'); return false;"><td class="camera-name">'+layer.feature.properties.description+'&nbsp;&nbsp;<i class="fa fa-chevron-right pull-right"></i><img class="pull-left" src="assets/img/cctv-'+layer.feature.properties.status.toLowerCase()+'.png" width="12" height="14" style="margin-right: 5px;"></td></tr>');
     }
   }
 });
