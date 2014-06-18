@@ -167,10 +167,11 @@ var cameras = L.geoJson(null, {
             return false;
           });
 
-          highlight.clearLayers().addLayer(L.circle([feature.geometry.coordinates[1], feature.geometry.coordinates[0]], 10, {
+          highlight.clearLayers().addLayer(L.circleMarker([feature.geometry.coordinates[1], feature.geometry.coordinates[0]], {
             stroke: false,
             fillColor: "#00FFFF",
-            fillOpacity: 0.8
+            fillOpacity: 0.7,
+            radius: 10
           }));
         }
       });
