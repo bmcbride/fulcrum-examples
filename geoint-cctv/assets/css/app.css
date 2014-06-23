@@ -31,10 +31,16 @@ body {
   bottom: 0px;
   overflow: auto;
 }
+.leaflet-sidebar {
+  z-index: 1020;
+}
 .leaflet-sidebar > .leaflet-control {
   padding: 0px;
 }
 .leaflet-sidebar .close {
+  right: 0px;
+  top: 5px;
+  background: transparent;
   font-size: 21px;
 }
 .leaflet-control-layers label {
@@ -116,14 +122,6 @@ body {
 }
 .leaflet-popup-content-wrapper {
   border-radius: 5px;
-}
-.leaflet-sidebar {
-  z-index: 1020;
-}
-.leaflet-sidebar .close {
-  right: 0px;
-  top: 5px;
-  background: transparent;
 }
 @media (max-width: 992px) {
   .navbar .navbar-brand {
