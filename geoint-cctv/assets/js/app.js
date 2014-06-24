@@ -43,6 +43,30 @@ function sidebarClick(id) {
   })
 }
 
+function photoGallery(photos) {
+  var photoArray = [];
+  $.each(photos.split(","), function(index, photo) {
+    photoArray.push({href: "https://web.fulcrumapp.com/shares/b711f907a8d42665/photos/"+photo});
+  });
+  $.fancybox(photoArray, {
+    "type": "image",
+    "showNavArrows": true,
+    "padding": 0,
+    "scrolling": "no",
+    beforeShow: function () {
+      this.title = "Photo " + (this.index + 1) + " of " + this.group.length + (this.title ? " - " + this.title : "");
+    },
+    helpers: {
+      overlay: {
+        css: {
+          "overflow": "hidden"
+        }
+      }
+    }
+  });
+  return false;
+}
+
 /* Basemap Layers */
 var mapboxOSM = L.tileLayer("http://{s}.tiles.mapbox.com/v3/spatialnetworks.map-6l9yntw9/{z}/{x}/{y}.png", {
   maxZoom: 19,
@@ -111,7 +135,7 @@ var cameras = L.geoJson(null, {
       }
       function formatPhotos(value) {
         if (value) {
-          return "<a name='photos' photos='" + value + "' href='#'>View Photos</a>";
+          return "<a href='#' onclick='photoGallery(\"" + value + "\"); return false;'>View Photos</a>";
         } else {
           return "<i>No photos available</i>";
         }
@@ -143,30 +167,6 @@ var cameras = L.geoJson(null, {
           $("#camera-table").empty().append(camera);
           $("#platform-table").empty().append(platform);
           $("#featureModal").modal("show");
-          $("[name='photos']").click(function () {
-            var photoArray = [];
-            $.each($(this).attr("photos").split(","), function(index, photo) {
-              photoArray.push({href: "https://web.fulcrumapp.com/shares/b711f907a8d42665/photos/"+photo});
-            });
-            $.fancybox(photoArray, {
-              "type": "image",
-              "showNavArrows": true,
-              "padding": 0,
-              "scrolling": "no",
-              beforeShow: function () {
-                this.title = "Photo " + (this.index + 1) + " of " + this.group.length + (this.title ? " - " + this.title : "");
-              },
-              helpers: {
-                overlay: {
-                  css: {
-                    "overflow": "hidden"
-                  }
-                }
-              }
-            });
-            return false;
-          });
-
           highlight.clearLayers().addLayer(L.circleMarker([feature.geometry.coordinates[1], feature.geometry.coordinates[0]], {
             stroke: false,
             fillColor: "#00FFFF",
