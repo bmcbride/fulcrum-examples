@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Fulcrum Data Shares</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.min.css" />
+    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp"></script>
+    <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.pack.js"></script>
+    <style>
+      body {
+        padding: 0;
+        margin: 0;
+      }
+      html, body, #map {
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script>
+      var config = {
+        share_id: "b711f907a8d42665",  // Edit this
+        popup_properties: ["Description", "Is camera present?", "Model of camera", "Coverage photos", "Platform type", "Platform height", "Platform photos"]  // Optional - An array of properties to show in a Leaflet popup
+      };
+
+      var infoWindow = new google.maps.InfoWindow({
+        content: "",
+        pixelOffset: new google.maps.Size(0, -38)
+      });
+
+      function photoGallery(photos) {
+        var photoArray = [];
+        $.each(photos.split(","), function(index, photo) {
+          photoArray.push({href: "https://web.fulcrumapp.com/shares/" + config.share_id + "/photos/" + photo});
+        });
+        $.fancybox(photoArray, {
+          "type": "image",
+          "showNavArrows": true,
+          "padding": 0,
+          "scrolling": "no",
+          beforeShow: function () {
+            this.title = "Photo " + (this.index + 1) + " of " + this.group.length + (this.title ? " - " + this.title : "");
+          },
+          helpers: {
+            overlay: {
+              css: {
+                "overflow": "hidden"
+              }
+            }
+          }
+        });
+        return false;
+      }
+
+      function initialize() { 
+        var map = new google.maps.Map(document.getElementById("map"), {
+          zoom: 15,
+          center: {lat: 27.94857, lng: -82.45580}
+        });
+        map.data.loadGeoJson("https://web.fulcrumapp.com/shares/" + config.share_id + ".geojson?human_friendly=true&skip_system_columns=true");
+
+        map.data.addListener("click", function(event) { 
+          if (config.popup_properties) {
+            var props = {};
+            var attributes = [];
+            event.feature.forEachProperty(function(value, property) {
+              props[property] = value;
+            });
+            $.each(config.popup_properties, function(index, prop) {
+              if (prop in props) {
+                /* Handle photos */
+                if (prop === "Coverage photos" || prop === "Platform photos") {
+                  if (props[prop]) {
+                    props[prop] = "<a href='#' onclick='photoGallery(\"" + props[prop] + "\"); return false;'>View Photos</a>";
+                  }
+                }
+                /* Handle potential "other" values */
+                if (prop === "Model of camera") {
+                  if (props[prop] === null) {
+                    props[prop] = props["Model of camera Other"]
+                  }
+                }
+                if (prop === "Platform type") {
+                  if (props[prop] === null) {
+                    props[prop] = props["Platform type Other"]
+                  }
+                }
+                attributes.push("<strong>" + prop + "</strong>: " + props[prop]);
+              }
+            });
+
+            infoWindow.setContent(attributes.join("<br>"));
+            var anchor = new google.maps.MVCObject();
+            anchor.set("position", event.latLng);
+            infoWindow.open(map, anchor);
+
+            $("[name='photos']").click(function () {
+              var photoArray = [];
+              $.each($(this).attr("photos").split(","), function(index, photo) {
+                photoArray.push({href: "https://web.fulcrumapp.com/shares/" + config.share_id + "/photos/" + photo});
+              });
+              $.fancybox(photoArray, {
+                "type": "image",
+                "showNavArrows": true,
+                "padding": 0,
+                "scrolling": "no",
+                beforeShow: function () {
+                  this.title = "Photo " + (this.index + 1) + " of " + this.group.length + (this.title ? " - " + this.title : "");
+                },
+                helpers: {
+                  overlay: {
+                    css: {
+                      "overflow": "hidden"
+                    }
+                  }
+                }
+              });
+              return false;
+            });
+          }
+        });
+      }
+
+      google.maps.event.addDomListener(window, "load", initialize);
+    </script>
+  </body>
+</html>

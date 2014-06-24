@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Fulcrum Data Shares</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+    <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.min.css" />
+    <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
+    <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.pack.js"></script>
+    <style>
+      body {
+        padding: 0;
+        margin: 0;
+      }
+      html, body, #map {
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script>
+      var config = {
+        share_id: "b711f907a8d42665",  // Edit this
+        popup_properties: ["Description", "Is camera present?", "Model of camera", "Coverage photos", "Platform type", "Platform height", "Platform photos"]  // Optional - An array of properties to show in a Leaflet popup
+      };
+
+      function photoGallery(photos) {
+        var photoArray = [];
+        $.each(photos.split(","), function(index, photo) {
+          photoArray.push({href: "https://web.fulcrumapp.com/shares/" + config.share_id + "/photos/" + photo});
+        });
+        $.fancybox(photoArray, {
+          "type": "image",
+          "showNavArrows": true,
+          "padding": 0,
+          "scrolling": "no",
+          beforeShow: function () {
+            this.title = "Photo " + (this.index + 1) + " of " + this.group.length + (this.title ? " - " + this.title : "");
+          },
+          helpers: {
+            overlay: {
+              css: {
+                "overflow": "hidden"
+              }
+            }
+          }
+        });
+        return false;
+      }
+
+      /* Mapquest Basemap Layers */
+      var mapquestOSM = L.tileLayer("http://{s}.mqcdn.com/tiles/1.0.0/osm/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        subdomains: ["otile1", "otile2", "otile3", "otile4"],
+        attribution: 'Tiles courtesy of <a href="http://www.mapquest.com/" target="_blank">MapQuest</a> <img src="http://developer.mapquest.com/content/osm/mq_logo.png">. Map data (c) <a href="http://www.openstreetmap.org/" target="_blank">OpenStreetMap</a> contributors, CC-BY-SA.'
+      });
+      var mapquestOAM = L.tileLayer("http://{s}.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg", {
+        maxZoom: 18,
+        subdomains: ["oatile1", "oatile2", "oatile3", "oatile4"],
+        attribution: 'Tiles courtesy of <a href="http://www.mapquest.com/" target="_blank">MapQuest</a>. Portions Courtesy NASA/JPL-Caltech and U.S. Depart. of Agriculture, Farm Service Agency'
+      });
+      var mapquestHYB = L.layerGroup([L.tileLayer("http://{s}.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg", {
+        maxZoom: 18,
+        subdomains: ["oatile1", "oatile2", "oatile3", "oatile4"]
+      }), L.tileLayer("http://{s}.mqcdn.com/tiles/1.0.0/hyb/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        subdomains: ["oatile1", "oatile2", "oatile3", "oatile4"],
+        attribution: 'Labels courtesy of <a href="http://www.mapquest.com/" target="_blank">MapQuest</a> <img src="http://developer.mapquest.com/content/osm/mq_logo.png">. Map data (c) <a href="http://www.openstreetmap.org/" target="_blank">OpenStreetMap</a> contributors, CC-BY-SA. Portions Courtesy NASA/JPL-Caltech and U.S. Depart. of Agriculture, Farm Service Agency'
+      })]);
+
+      /* Overlay Layers */
+      var cameras = L.geoJson(null, {
+        pointToLayer: function (feature, latlng) {
+          return L.marker(latlng, {
+            title: feature.properties["Description"],
+            riseOnHover: true
+          });
+        },
+        onEachFeature: function (feature, layer) {
+          if (config.popup_properties) {
+            var props = feature.properties;
+            var attributes = [];
+            $.each(config.popup_properties, function(index, prop) {
+              if (prop in props) {
+                /* Handle photos */
+                if (prop === "Coverage photos" || prop === "Platform photos") {
+                  if (props[prop]) {
+                    props[prop] = "<a href='#' onclick='photoGallery(\"" + props[prop] + "\"); return false;'>View Photos</a>";
+                  }
+                }
+                /* Handle potential "other" values */
+                if (prop === "Model of camera") {
+                  if (props[prop] === null) {
+                    props[prop] = props["Model of camera Other"]
+                  }
+                }
+                if (prop === "Platform type") {
+                  if (props[prop] === null) {
+                    props[prop] = props["Platform type Other"]
+                  }
+                }
+                attributes.push("<strong>" + prop + "</strong>: " + props[prop]);
+              }
+            });
+            layer.bindPopup(attributes.join("<br>"));
+          }
+        }
+      });
+
+      $.getJSON("https://web.fulcrumapp.com/shares/" + config.share_id + ".geojson?human_friendly=true&skip_system_columns=true", function (data) {
+        cameras.addData(data);
+      }).complete(function () {
+        map.fitBounds(cameras.getBounds());
+      });
+
+      var map = L.map("map", {
+        layers: [mapquestOSM, cameras]
+      }).fitWorld();
+
+      var baseLayers = {
+        "Street Map": mapquestOSM,
+        "Aerial Imagery": mapquestOAM,
+        "Imagery with Streets": mapquestHYB
+      };
+
+      var overlays = {
+        "Surveillance Cameras": cameras
+      };
+
+      /* Larger screens get expanded layer control */
+      if (document.body.clientWidth <= 767) {
+        var isCollapsed = true;
+      } else {
+        var isCollapsed = false;
+      }
+
+      var layerControl = L.control.layers(baseLayers, overlays, {
+        collapsed: isCollapsed
+      }).addTo(map);
+    </script>
+  </body>
+</html>

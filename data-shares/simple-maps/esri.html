@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Fulcrum Data Shares</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="http://js.arcgis.com/3.9/js/esri/css/esri.css">
+    <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.min.css" />
+    <script src="http://js.arcgis.com/3.9/"></script>
+    <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.pack.js"></script>
+    <style>
+      body {
+        padding: 0;
+        margin: 0;
+      }
+      html, body, #map {
+        height: 100%;
+      }
+    </style>
+    <script>
+      var map, csv;
+      var config = {
+        share_id: "b711f907a8d42665",  // Edit this
+        popup_properties: ["description", "camera_present", "camera_model", "coverage_photos", "platform_type", "platform_height", "platform_photos"]  // Optional - An array of properties to show in a Leaflet popup
+      };
+
+      function photoGallery(photos) {
+        var photoArray = [];
+        $.each(photos.split(","), function(index, photo) {
+          photoArray.push({href: "https://web.fulcrumapp.com/shares/" + config.share_id + "/photos/" + photo});
+        });
+        $.fancybox(photoArray, {
+          "type": "image",
+          "showNavArrows": true,
+          "padding": 0,
+          "scrolling": "no",
+          beforeShow: function () {
+            this.title = "Photo " + (this.index + 1) + " of " + this.group.length + (this.title ? " - " + this.title : "");
+          },
+          helpers: {
+            overlay: {
+              css: {
+                "overflow": "hidden"
+              }
+            }
+          }
+        });
+        return false;
+      }
+
+      require([
+        "esri/map", 
+        "esri/layers/CSVLayer",
+        "esri/Color",
+        "esri/symbols/SimpleMarkerSymbol",
+        "esri/renderers/SimpleRenderer",
+        "esri/InfoTemplate",
+        "esri/urlUtils",
+        "dojo/domReady!"
+      ], function(
+        Map, CSVLayer, Color, SimpleMarkerSymbol, SimpleRenderer, InfoTemplate, urlUtils
+      ) {
+        esri.config.defaults.io.corsEnabledServers = ["https://web.fulcrumapp.com"]
+        map = new Map("map", {
+          basemap: "streets",
+          center: [-82.45580, 27.94857],
+          zoom: 15
+        });
+        csv = new CSVLayer("https://web.fulcrumapp.com/shares/" + config.share_id + ".csv", {
+          copyright: "fulcrumapp.com"
+        });
+        var blueDot = new Color([0, 0, 255, 0.8]);
+        var marker = new SimpleMarkerSymbol("solid", 15, null, blueDot);
+        var renderer = new SimpleRenderer(marker);
+        csv.setRenderer(renderer);
+
+        var template = new InfoTemplate("<b>${status}</b>", getAttributes);
+        csv.setInfoTemplate(template);
+        map.addLayer(csv);
+
+        function getAttributes(graphic){
+          var props = graphic.attributes;
+          var attributes = [];
+          $.each(config.popup_properties, function(index, prop) {
+            if (prop in props) {
+              /* Handle photos */
+              if (prop === "coverage_photos" || prop === "platform_photos") {
+                if (props[prop]) {
+                  props[prop] = "<a href='#' onclick='photoGallery(\"" + props[prop] + "\"); return false;'>View Photos</a>";
+                }
+              }
+              /* Handle potential "other" values */
+              if (prop === "camera_model") {
+                if (props[prop] === null) {
+                  props[prop] = props["camera_model_other"]
+                }
+              }
+              if (prop === "platform_type") {
+                if (props[prop] === null) {
+                  props[prop] = props["platform_type_other"]
+                }
+              }
+              attributes.push("<strong>" + prop + "</strong>: " + props[prop]);
+            }
+          });
+          return attributes.join("<br>");
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <div id="map"></div>
+  </body>
+</html>
