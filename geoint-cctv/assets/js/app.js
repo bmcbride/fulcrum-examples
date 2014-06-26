@@ -213,7 +213,8 @@ map.on("overlayremove", function(e) {
   }
 });
 
-map.on("click", function(e) {
+/* Clear feature highlight when featureModal is closed */
+$("#featureModal").on("hide.bs.modal", function (e) {
   highlight.clearLayers();
 });
 
