@@ -55,14 +55,14 @@
         return false;
       }
 
-      function initialize() { 
+      function initialize() {
         var map = new google.maps.Map(document.getElementById("map"), {
           zoom: 15,
           center: {lat: 27.94857, lng: -82.45580}
         });
         map.data.loadGeoJson("https://web.fulcrumapp.com/shares/" + config.share_id + ".geojson?human_friendly=true&skip_system_columns=true");
 
-        map.data.addListener("click", function(event) { 
+        map.data.addListener("click", function(event) {
           if (config.popup_properties) {
             var props = {};
             var attributes = [];
@@ -80,12 +80,12 @@
                 /* Handle potential "other" values */
                 if (prop === "Model of camera") {
                   if (props[prop] === null) {
-                    props[prop] = props["Model of camera Other"]
+                    props[prop] = props["Model of camera Other"];
                   }
                 }
                 if (prop === "Platform type") {
                   if (props[prop] === null) {
-                    props[prop] = props["Platform type Other"]
+                    props[prop] = props["Platform type Other"];
                   }
                 }
                 attributes.push("<strong>" + prop + "</strong>: " + props[prop]);
