@@ -4,9 +4,9 @@
     <title>Fulcrum Data Shares</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="stylesheet" href="https://api.tiles.mapbox.com/mapbox.js/v1.6.4/mapbox.css">
+    <link rel="stylesheet" href="https://api.tiles.mapbox.com/mapbox.js/v2.0.1/mapbox.css">
     <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.min.css" />
-    <script src="https://api.tiles.mapbox.com/mapbox.js/v1.6.4/mapbox.js"></script>
+    <script src="https://api.tiles.mapbox.com/mapbox.js/v2.0.1/mapbox.js"></script>
     <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
     <script src="http://cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.pack.js"></script>
     <style>
@@ -22,6 +22,8 @@
   <body>
     <div id="map"></div>
     <script>
+      L.mapbox.accessToken = "pk.eyJ1IjoiYnJ5bWNicmlkZSIsImEiOiJIYjFYYXlFIn0.Ci5eKfdnPfKDunIWHPUkXQ";
+
       var config = {
         share_id: "b711f907a8d42665",  // Edit this
         popup_properties: ["Description", "Is camera present?", "Model of camera", "Coverage photos", "Platform type", "Platform height", "Platform photos"]  // Optional - An array of properties to show in a Leaflet popup
@@ -51,7 +53,7 @@
         return false;
       }
 
-      var map = L.mapbox.map("map", "spatialnetworks.map-6l9yntw9")
+      var map = L.mapbox.map("map", "brymcbride.map-n136kgxs")
         .setView([-82.45580, 27.94857], 15);
 
       var featureLayer = L.mapbox.featureLayer()
