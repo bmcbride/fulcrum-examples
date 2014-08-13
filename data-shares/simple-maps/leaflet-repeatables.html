@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Fulcrum Data Shares</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css">
+    <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.min.css">
+    <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
+    <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.pack.js"></script>
+    <style>
+      body {
+        padding: 0;
+        margin: 0;
+      }
+      html, body, #map {
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script>
+      var config = {
+        share_id: "f59afeadac95a789",  // Edit this
+        park_properties: ["Park Name", "Operator", "Type of Facility", "Address Full", "Operating Hours", "Photos"],  // Optional - An array of properties to show in a Leaflet popup
+        feature_properties: ["Feature Type", "Status", "Issue Comment", "Photos"]
+      };
+
+      function photoGallery(photos) {
+        var photoArray = [];
+        $.each(photos.split(","), function(index, photo) {
+          photoArray.push({href: "https://web.fulcrumapp.com/shares/" + config.share_id + "/photos/" + photo});
+        });
+        $.fancybox(photoArray, {
+          "type": "image",
+          "showNavArrows": true,
+          "padding": 0,
+          "scrolling": "no",
+          beforeShow: function () {
+            this.title = "Photo " + (this.index + 1) + " of " + this.group.length + (this.title ? " - " + this.title : "");
+          },
+          helpers: {
+            overlay: {
+              css: {
+                "overflow": "hidden"
+              }
+            }
+          }
+        });
+        return false;
+      }
+
+      /* Mapquest Basemap Layers */
+      var mapquestOSM = L.tileLayer("http://{s}.mqcdn.com/tiles/1.0.0/osm/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        subdomains: ["otile1", "otile2", "otile3", "otile4"],
+        attribution: 'Tiles courtesy of <a href="http://www.mapquest.com/" target="_blank">MapQuest</a> <img src="http://developer.mapquest.com/content/osm/mq_logo.png">. Map data (c) <a href="http://www.openstreetmap.org/" target="_blank">OpenStreetMap</a> contributors, CC-BY-SA.'
+      });
+      var mapquestOAM = L.tileLayer("http://{s}.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg", {
+        maxZoom: 18,
+        subdomains: ["oatile1", "oatile2", "oatile3", "oatile4"],
+        attribution: 'Tiles courtesy of <a href="http://www.mapquest.com/" target="_blank">MapQuest</a>. Portions Courtesy NASA/JPL-Caltech and U.S. Depart. of Agriculture, Farm Service Agency'
+      });
+      var mapquestHYB = L.layerGroup([L.tileLayer("http://{s}.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg", {
+        maxZoom: 18,
+        subdomains: ["oatile1", "oatile2", "oatile3", "oatile4"]
+      }), L.tileLayer("http://{s}.mqcdn.com/tiles/1.0.0/hyb/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        subdomains: ["oatile1", "oatile2", "oatile3", "oatile4"],
+        attribution: 'Labels courtesy of <a href="http://www.mapquest.com/" target="_blank">MapQuest</a> <img src="http://developer.mapquest.com/content/osm/mq_logo.png">. Map data (c) <a href="http://www.openstreetmap.org/" target="_blank">OpenStreetMap</a> contributors, CC-BY-SA. Portions Courtesy NASA/JPL-Caltech and U.S. Depart. of Agriculture, Farm Service Agency'
+      })]);
+
+      /* Overlay Layers */
+      var parks = L.geoJson(null, {
+        pointToLayer: function (feature, latlng) {
+          return L.marker(latlng, {
+            title: feature.properties["Park Name"],
+            riseOnHover: true,
+            icon: L.icon({
+              "iconUrl": "img/park.png",
+              "iconSize": [32, 37],
+              "popupAnchor": [0, -19]
+            })
+          });
+        },
+        onEachFeature: function (feature, layer) {
+          if (config.park_properties) {
+            var props = feature.properties;
+            var attributes = [];
+            $.each(config.park_properties, function(index, prop) {
+              if (prop in props) {
+                /* Handle photos */
+                if (prop === "Photos") {
+                  if (props[prop]) {
+                    props[prop] = "<a href='#' onclick='photoGallery(\"" + props[prop] + "\"); return false;'>View Photos</a>";
+                  }
+                }
+                /* Handle potential "other" values */
+                if (prop === "Type of Facility") {
+                  if (props[prop] === null) {
+                    props[prop] = props["Type of Facility Other"];
+                  }
+                }
+                attributes.push("<strong>" + prop + "</strong>: " + props[prop]);
+              }
+            });
+            layer.bindPopup(attributes.join("<br>"));
+            layer.on("click", function(e) {
+              /* Clear any existing park features from previous click */
+              parkFeatures.clearLayers();
+              /* Loop through the features and find only the features associated with the park we clicked on */
+              features.eachLayer(function (layer) {
+                if (layer.feature.properties["Fulcrum Parent Id"] === e.target.feature.properties["Fulcrum Id"]) {
+                  parkFeatures.addLayer(layer);
+                  /* Zoom to extent of park features */
+                  map.fitBounds(parkFeatures.getBounds(), {maxZoom: 18});
+                }
+              });
+            });
+          }
+        }
+      });
+      /* Fetch GeoJSON for parks */
+      $.getJSON("https://web.fulcrumapp.com/shares/" + config.share_id + ".geojson?human_friendly=true", function (data) {
+        parks.addData(data);
+      }).complete(function () {
+        map.fitBounds(parks.getBounds());
+      });
+
+      /* Dynamic layer used to display features associated with the clicked park */
+      var parkFeatures = L.geoJson(null);
+
+      var features = L.geoJson(null, {
+        pointToLayer: function (feature, latlng) {
+          return L.marker(latlng, {
+            title: feature.properties["Feature Type"],
+            riseOnHover: true,
+            icon: L.icon({
+              "iconUrl": "img/picnic.png",
+              "iconSize": [19, 19],
+              "popupAnchor": [0, -10]
+            })
+          });
+        },
+        onEachFeature: function (feature, layer) {
+          if (config.feature_properties) {
+            var props = feature.properties;
+            var attributes = [];
+            $.each(config.feature_properties, function(index, prop) {
+              if (prop in props) {
+                /* Handle photos */
+                if (prop === "Photos") {
+                  if (props[prop]) {
+                    props[prop] = "<a href='#' onclick='photoGallery(\"" + props[prop] + "\"); return false;'>View Photos</a>";
+                  }
+                }
+                /* Handle potential "other" values */
+                if (prop === "Feature Type") {
+                  if (props[prop] === null) {
+                    props[prop] = props["Feature Type Other"];
+                  }
+                }
+                attributes.push("<strong>" + prop + "</strong>: " + props[prop]);
+              }
+            });
+            layer.bindPopup(attributes.join("<br>"));
+          }
+        }
+      });
+      /* Fetch GeoJSON for features */
+      $.getJSON("https://web.fulcrumapp.com/shares/" + config.share_id + ".geojson?child=park_features&human_friendly=true", function (data) {
+        features.addData(data);
+      });
+
+      var map = L.map("map", {
+        layers: [mapquestOSM, parks, parkFeatures]
+      }).fitWorld();
+
+      var baseLayers = {
+        "Street Map": mapquestOSM,
+        "Aerial Imagery": mapquestOAM,
+        "Imagery with Streets": mapquestHYB
+      };
+
+      var overlays = {
+        "Parks": parks
+      };
+
+      /* Larger screens get expanded layer control */
+      if (document.body.clientWidth <= 767) {
+        var isCollapsed = true;
+      } else {
+        var isCollapsed = false;
+      }
+
+      var layerControl = L.control.layers(baseLayers, overlays, {
+        collapsed: isCollapsed
+      }).addTo(map);
+    </script>
+  </body>
+</html>
