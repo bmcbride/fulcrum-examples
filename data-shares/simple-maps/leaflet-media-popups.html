@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Fulcrum Data Shares</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.css" />
+    <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.min.css" />
+    <script src="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.js"></script>
+    <script src="http://code.jquery.com/jquery-2.2.2.min.js"></script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.pack.js"></script>
+    <style>
+      body {
+        padding: 0;
+        margin: 0;
+      }
+      html, body, #map {
+        height: 100%;
+      }
+      .fancybox-nav {
+        width: 60px;
+      }
+      .fancybox-nav span {
+        visibility: visible;
+        opacity: 0.5;
+      }
+      .fancybox-nav:hover span {
+        opacity: 1;
+      }
+      .fancybox-next {
+        right: -60px;
+      }
+      .fancybox-prev {
+        left: -60px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script>
+      var config = {
+        share_id: "5880eb293dfc00fe",  // Edit this
+        popup_properties: [{ // type options include "photos", "videos", "audio", "hyperlink"
+          property: "Audio",
+          type: "audio"
+        }, {
+          property: "Notes"
+        }]
+      };
+
+      function mediaGallery(ids, type) {
+        var mediaArray = [];
+        var fbType;
+        $.each(ids.split(","), function(index, media) {
+          if (type === "audio" || type === "videos") {
+            fbType = "iframe";
+            mediaArray.push({href: "https://web.fulcrumapp.com/shares/" + config.share_id + "/" + type + "/" + media + "/play"});
+          } else if (type === "photos") {
+            fbType = "image";
+            mediaArray.push({href: "https://web.fulcrumapp.com/shares/" + config.share_id + "/photos/" + media});
+          }
+        });
+        $.fancybox(mediaArray, {
+          "type": fbType,
+          "showNavArrows": true,
+          "padding": 2,
+          "margin": [20, 60, 20, 60],
+          "scrolling": "no",
+          beforeShow: function () {
+            if (type === "audio") {
+              title = "Audio ";
+            } else if (type === "videos") {
+              title = "Video ";
+            } else if (type === "photos") {
+              title = "Photo ";
+            }
+            this.title = title + (this.index + 1) + " of " + this.group.length + (this.title ? " - " + this.title : "");
+          },
+          helpers: {
+            overlay: {
+              css: {
+                "overflow": "hidden"
+              }
+            }
+          }
+        });
+        return false;
+      }
+
+      /* Mapquest Basemap Layers */
+      var mapquestOSM = L.tileLayer("http://{s}.mqcdn.com/tiles/1.0.0/osm/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        subdomains: ["otile1", "otile2", "otile3", "otile4"],
+        attribution: 'Tiles courtesy of <a href="http://www.mapquest.com/" target="_blank">MapQuest</a> <img src="http://developer.mapquest.com/content/osm/mq_logo.png">. Map data (c) <a href="http://www.openstreetmap.org/" target="_blank">OpenStreetMap</a> contributors, CC-BY-SA.'
+      });
+      var mapquestOAM = L.tileLayer("http://{s}.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg", {
+        maxZoom: 18,
+        subdomains: ["oatile1", "oatile2", "oatile3", "oatile4"],
+        attribution: 'Tiles courtesy of <a href="http://www.mapquest.com/" target="_blank">MapQuest</a>. Portions Courtesy NASA/JPL-Caltech and U.S. Depart. of Agriculture, Farm Service Agency'
+      });
+      var mapquestHYB = L.layerGroup([L.tileLayer("http://{s}.mqcdn.com/tiles/1.0.0/sat/{z}/{x}/{y}.jpg", {
+        maxZoom: 18,
+        subdomains: ["oatile1", "oatile2", "oatile3", "oatile4"]
+      }), L.tileLayer("http://{s}.mqcdn.com/tiles/1.0.0/hyb/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        subdomains: ["oatile1", "oatile2", "oatile3", "oatile4"],
+        attribution: 'Labels courtesy of <a href="http://www.mapquest.com/" target="_blank">MapQuest</a> <img src="http://developer.mapquest.com/content/osm/mq_logo.png">. Map data (c) <a href="http://www.openstreetmap.org/" target="_blank">OpenStreetMap</a> contributors, CC-BY-SA. Portions Courtesy NASA/JPL-Caltech and U.S. Depart. of Agriculture, Farm Service Agency'
+      })]);
+
+      /* Overlay Layers */
+      var points = L.geoJson(null, {
+        pointToLayer: function (feature, latlng) {
+          return L.marker(latlng, {
+            title: feature.properties[config.popup_properties[0].property],
+            riseOnHover: true
+          });
+        },
+        onEachFeature: function (feature, layer) {
+          if (config.popup_properties) {
+            var props = feature.properties;
+            var attributes = [];
+            $.each(config.popup_properties, function(index, prop) {
+              if (prop.property in props && props[prop.property] !== null) {
+                /* Handle media links */
+                if (prop.type && (prop.type === "audio" || prop.type === "videos" || prop.type === "photos")) {
+                  if (props[prop.property]) {
+                    props[prop.property] = "<a href='#' onclick='mediaGallery(\"" + props[prop.property] + "\", \"" + prop.type + "\"); return false;'>View</a>";
+                  }
+                } else if (prop.type && prop.type === "hyperlink") {
+                  props[prop.property] = "<a href='" + props[prop.property] + "' target='_blank'>" + props[prop.property] + "</a>";
+                }
+                attributes.push("<strong>" + prop.property + "</strong>: " + props[prop.property]);
+              }
+            });
+            layer.bindPopup(attributes.join("<br>"));
+          }
+        }
+      });
+
+      $.getJSON("https://web.fulcrumapp.com/shares/" + config.share_id + ".geojson?human_friendly=true&skip_system_columns=true", function (data) {
+        points.addData(data);
+      }).complete(function () {
+        map.fitBounds(points.getBounds());
+      });
+
+      var map = L.map("map", {
+        layers: [mapquestOSM, points]
+      }).fitWorld();
+
+      var baseLayers = {
+        "Street Map": mapquestOSM,
+        "Aerial Imagery": mapquestOAM,
+        "Imagery with Streets": mapquestHYB
+      };
+
+      var overlays = {
+        "Data Points": points
+      };
+
+      var layerControl = L.control.layers(baseLayers, overlays, {
+        collapsed: document.body.clientWidth <= 767 ? true : false // Larger screens get expanded layer control
+      }).addTo(map);
+    </script>
+  </body>
+</html>
